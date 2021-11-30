@@ -126,6 +126,7 @@ public class FDroidApp extends Application implements androidx.work.Configuratio
     @Nullable
     public static volatile String queryString;
 
+    // Leaving the fully qualified class name here to help clarify the difference between spongy/bouncy castle.
     private static final org.bouncycastle.jce.provider.BouncyCastleProvider BOUNCYCASTLE_PROVIDER;
 
     /**
@@ -384,6 +385,9 @@ public class FDroidApp extends Application implements androidx.work.Configuratio
             modeFlags |= Intent.FLAG_GRANT_PERSISTABLE_URI_PERMISSION;
             grantUriPermission(packageName, InstallHistoryService.LOG_URI, modeFlags);
         }
+
+        // find and process provisions if any.
+        Provisioner.scanAndProcess(getApplicationContext());
 
         // if the underlying OS version has changed, then fully rebuild the database
         SharedPreferences atStartTime = getAtStartTimeSharedPreferences();
