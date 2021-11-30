@@ -1,13 +1,19 @@
-F-Droid is an installable catalogue of libre software apps for Android. The F-Droid client app makes it easy to browse, install, and keep track of updates on your device.
+This is a demo fork of F-Droid to serve as an example app built on the
+development fork of Conscrypt which supports TLS Encrypted ClientHello
+(ECH).  ECH is the next version of the TLS protocol that encrypts
+internet traffic and puts the "S" in HTTPS.  It makes it possible to
+encrypt all of the metadata that is possible to encrypt in the TLS
+negogiation. It is a test case for interoperability between various
+implementations, platforms, and networks.
+ 
+The Encrypted ClientHello (ECH) mechanism (IETF draft spec) is a way to
+plug a few privacy-holes that remain in the Transport Layer Security
+(TLS) protocol that's used as the security layer for the web. OpenSSL
+is a widely used library that provides an implementation of the TLS
+protocol. The DEfO project is developing an implementation of ECH for
+OpenSSL, and various clients and servers that use OpenSSL as a
+demonstration and for interoperability testing.
 
-It connects to any F-Droid compatible repositories. The default repo is hosted at f-droid.org, which contains only bona fide libre software.
-
-Android itself is open in the sense that you are free to install APKs from anywhere you wish, but there are many good reasons for using F-Droid as your libre software app manager:
-
-* Get notified when updates are available
-* Optionally download and install updates automatically
-* Keep track of older and beta versions
-* Filter out apps incompatible with the device
-* Find apps via categories and searchable descriptions
-* Access associated URLs for donations, source code etc.
-* Stay safe by checking repo index signatures and APK hashes
+DEfO was initially funded by the Open Technology Fund, and
+subsequently by the National Democratic Initiative. Tolerant Networks
+Ltd. and people from the Guardian Project are doing the work in DEfO.
