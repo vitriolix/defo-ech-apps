@@ -26,6 +26,7 @@
 
 package org.fdroid.fdroid.views;
 
+import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
@@ -58,6 +59,7 @@ import com.bumptech.glide.RequestManager;
 import com.bumptech.glide.request.RequestOptions;
 import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 
+import org.apache.commons.io.FileUtils;
 import org.fdroid.fdroid.FDroidApp;
 import org.fdroid.fdroid.Languages;
 import org.fdroid.fdroid.Preferences;
@@ -66,10 +68,30 @@ import org.fdroid.fdroid.UpdateService;
 import org.fdroid.fdroid.Utils;
 import org.fdroid.fdroid.installer.InstallHistoryService;
 import org.fdroid.fdroid.installer.PrivilegedInstaller;
+import org.fdroid.fdroid.net.Downloader;
+import org.fdroid.fdroid.net.DownloaderFactory;
 import org.fdroid.fdroid.installer.SessionInstallManager;
 import org.fdroid.fdroid.work.CleanCacheWorker;
 import org.fdroid.fdroid.work.FDroidMetricsWorker;
 
+import java.io.FileReader;
+import java.io.IOException;
+import java.nio.charset.Charset;
+import java.util.Properties;
+
+import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.app.ActivityCompat;
+import androidx.preference.CheckBoxPreference;
+import androidx.preference.EditTextPreference;
+import androidx.preference.ListPreference;
+import androidx.preference.Preference;
+import androidx.preference.PreferenceCategory;
+import androidx.preference.PreferenceFragmentCompat;
+import androidx.preference.PreferenceGroup;
+import androidx.preference.SeekBarPreference;
+import androidx.preference.SwitchPreferenceCompat;
+import androidx.recyclerview.widget.LinearSmoothScroller;
+import androidx.recyclerview.widget.RecyclerView;
 import info.guardianproject.netcipher.proxy.OrbotHelper;
 
 public class PreferencesFragment extends PreferenceFragmentCompat
@@ -445,12 +467,99 @@ public class PreferencesFragment extends PreferenceFragmentCompat
                 throw new RuntimeException("BOOM!");
             });
         }
+
+        final Activity aboutActivity = getActivity();
+        final TextView cloudflareTraceTextView = view.findViewById(R.id.cloudflare_trace);
+        new Thread() {
+            @Override
+            public void run() {
+                String cloudflareTrace = null;
+                final Properties properties = new Properties();
+                try {
+                    Downloader downloader = DownloaderFactory.create(context,
+                            "https://epochbelt.com/cdn-cgi/trace");
+                    downloader.download();
+                    cloudflareTrace = FileUtils.readFileToString(downloader.outputFile,
+                            Charset.defaultCharset());
+                    Utils.debugLog(TAG, "cloudflareTrace: " + cloudflareTrace);
+                    properties.load(new FileReader(downloader.outputFile));
+                } catch (IOException | InterruptedException e) {
+                    e.printStackTrace();
+                    cloudflareTrace = "ERROR: " + e.getLocalizedMessage();
+                }
+                if (cloudflareTrace != null) {
+                    final String text = properties.getProperty("h") + "/" +
+                            properties.getProperty("ip") + "\nserved by " +
+                            properties.getProperty("colo") + "/" +
+                            properties.getProperty("fl") + "\n" +
+                            properties.getProperty("tls") + " " +
+                            properties.getProperty("sni") + " SNI\n" +
+                            ("encrypted".equals(properties.getProperty("sni"))
+                                    ? "\uD83C\uDF89" : "\uD83D\uDE31");
+                    aboutActivity.runOnUiThread(() -> cloudflareTraceTextView.setText(text));
+                    final String t = cloudflareTrace;
+                    cloudflareTraceTextView.setOnClickListener(v -> {
+                        Toast.makeText(getContext(), t, Toast.LENGTH_LONG).show();
+                    });
+                }
+            }
+        }.start();
+
         new MaterialAlertDialogBuilder(context)
                 .setView(view)
                 .setPositiveButton(R.string.ok, null)
                 .show();
         return true;
     };
+                    String versionName = Utils.getVersionName(context);
+                    if (versionName != null) {
+                        ((TextView) view.findViewById(R.id.version)).setText(versionName);
+                    }
+
+                    final Activity aboutActivity = getActivity();
+                    final TextView cloudflareTraceTextView = view.findViewById(R.id.cloudflare_trace);
+                    new Thread() {
+                        @Override
+                        public void run() {
+                            String cloudflareTrace = null;
+                            final Properties properties = new Properties();
+                            try {
+                                Downloader downloader = DownloaderFactory.create(context,
+                                        "https://epochbelt.com/cdn-cgi/trace");
+                                downloader.download();
+                                cloudflareTrace = FileUtils.readFileToString(downloader.outputFile,
+                                        Charset.defaultCharset());
+                                Utils.debugLog(TAG, "cloudflareTrace: " + cloudflareTrace);
+                                properties.load(new FileReader(downloader.outputFile));
+                            } catch (IOException | InterruptedException e) {
+                                e.printStackTrace();
+                                cloudflareTrace = "ERROR: " + e.getLocalizedMessage();
+                            }
+                            if (cloudflareTrace != null) {
+                                final String text = properties.getProperty("h") + "/" +
+                                        properties.getProperty("ip") + "\nserved by " +
+                                        properties.getProperty("colo") + "/" +
+                                        properties.getProperty("fl") + "\n" +
+                                        properties.getProperty("tls") + " " +
+                                        properties.getProperty("sni") + " SNI\n" +
+                                        ("encrypted".equals(properties.getProperty("sni"))
+                                                ? "\uD83C\uDF89" : "\uD83D\uDE31");
+                                aboutActivity.runOnUiThread(() -> cloudflareTraceTextView.setText(text));
+                                final String t = cloudflareTrace;
+                                cloudflareTraceTextView.setOnClickListener(v -> {
+                                    Toast.makeText(getContext(), t, Toast.LENGTH_LONG).show();
+                                });
+                            }
+                        }
+                    }.start();
+
+                    new MaterialAlertDialogBuilder(context)
+                            .setView(view)
+                            .setPositiveButton(R.string.ok, null)
+                            .show();
+                    return true;
+                }
+            };
 
     /**
      * Initializes SystemInstaller preference, which can only be enabled when F-Droid is installed as a system-app
