@@ -60,6 +60,8 @@ import com.bumptech.glide.request.RequestOptions;
 import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 
 import org.apache.commons.io.FileUtils;
+import org.fdroid.IndexFile;
+import org.fdroid.download.NotFoundException;
 import org.fdroid.fdroid.FDroidApp;
 import org.fdroid.fdroid.Languages;
 import org.fdroid.fdroid.Preferences;
@@ -68,14 +70,16 @@ import org.fdroid.fdroid.UpdateService;
 import org.fdroid.fdroid.Utils;
 import org.fdroid.fdroid.installer.InstallHistoryService;
 import org.fdroid.fdroid.installer.PrivilegedInstaller;
-import org.fdroid.fdroid.net.Downloader;
+import org.fdroid.download.Downloader;
 import org.fdroid.fdroid.net.DownloaderFactory;
 import org.fdroid.fdroid.installer.SessionInstallManager;
 import org.fdroid.fdroid.work.CleanCacheWorker;
 import org.fdroid.fdroid.work.FDroidMetricsWorker;
 
+import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
+import java.io.StringReader;
 import java.nio.charset.Charset;
 import java.util.Properties;
 
@@ -93,6 +97,10 @@ import androidx.preference.SwitchPreferenceCompat;
 import androidx.recyclerview.widget.LinearSmoothScroller;
 import androidx.recyclerview.widget.RecyclerView;
 import info.guardianproject.netcipher.proxy.OrbotHelper;
+
+import okhttp3.OkHttpClient;
+import okhttp3.Request;
+import okhttp3.Response;
 
 public class PreferencesFragment extends PreferenceFragmentCompat
         implements SharedPreferences.OnSharedPreferenceChangeListener {
@@ -476,32 +484,38 @@ public class PreferencesFragment extends PreferenceFragmentCompat
                 String cloudflareTrace = null;
                 final Properties properties = new Properties();
                 try {
-                    Downloader downloader = DownloaderFactory.create(context,
-                            "https://epochbelt.com/cdn-cgi/trace");
-                    downloader.download();
-                    cloudflareTrace = FileUtils.readFileToString(downloader.outputFile,
-                            Charset.defaultCharset());
+                    OkHttpClient client = new OkHttpClient();
+
+                    Request request = new Request.Builder()
+//                            .url("https://crypto.cloudflare.com/cdn-cgi/trace") // in case epoch belt is down
+//                            .url("https://www.epochbelt.com/cdn-cgi/trace")
+                            .url("https://cloudflare.f-droid.org/cdn-cgi/trace")
+                            .build();
+
+                    try (Response response = client.newCall(request).execute()) {
+                        cloudflareTrace = response.body().string();
+                    }
+
                     Utils.debugLog(TAG, "cloudflareTrace: " + cloudflareTrace);
-                    properties.load(new FileReader(downloader.outputFile));
-                } catch (IOException | InterruptedException e) {
+                    properties.load(new StringReader(cloudflareTrace));
+                } catch (IOException e) {
                     e.printStackTrace();
                     cloudflareTrace = "ERROR: " + e.getLocalizedMessage();
                 }
-                if (cloudflareTrace != null) {
-                    final String text = properties.getProperty("h") + "/" +
-                            properties.getProperty("ip") + "\nserved by " +
-                            properties.getProperty("colo") + "/" +
-                            properties.getProperty("fl") + "\n" +
-                            properties.getProperty("tls") + " " +
-                            properties.getProperty("sni") + " SNI\n" +
-                            ("encrypted".equals(properties.getProperty("sni"))
-                                    ? "\uD83C\uDF89" : "\uD83D\uDE31");
-                    aboutActivity.runOnUiThread(() -> cloudflareTraceTextView.setText(text));
-                    final String t = cloudflareTrace;
-                    cloudflareTraceTextView.setOnClickListener(v -> {
-                        Toast.makeText(getContext(), t, Toast.LENGTH_LONG).show();
-                    });
-                }
+
+                final String text = properties.getProperty("h") + "/" +
+                        properties.getProperty("ip") + "\nserved by " +
+                        properties.getProperty("colo") + "/" +
+                        properties.getProperty("fl") + "\n" +
+                        properties.getProperty("tls") + " " +
+                        properties.getProperty("sni") + " SNI\n" +
+                        ("encrypted".equals(properties.getProperty("sni"))
+                                ? "\uD83C\uDF89" : "\uD83D\uDE31");
+                aboutActivity.runOnUiThread(() -> cloudflareTraceTextView.setText(text));
+                final String t = cloudflareTrace;
+                aboutActivity.runOnUiThread(() -> cloudflareTraceTextView.setOnClickListener(v -> {
+                    Toast.makeText(getContext(), t, Toast.LENGTH_LONG).show();
+                }));
             }
         }.start();
 
@@ -511,55 +525,6 @@ public class PreferencesFragment extends PreferenceFragmentCompat
                 .show();
         return true;
     };
-                    String versionName = Utils.getVersionName(context);
-                    if (versionName != null) {
-                        ((TextView) view.findViewById(R.id.version)).setText(versionName);
-                    }
-
-                    final Activity aboutActivity = getActivity();
-                    final TextView cloudflareTraceTextView = view.findViewById(R.id.cloudflare_trace);
-                    new Thread() {
-                        @Override
-                        public void run() {
-                            String cloudflareTrace = null;
-                            final Properties properties = new Properties();
-                            try {
-                                Downloader downloader = DownloaderFactory.create(context,
-                                        "https://epochbelt.com/cdn-cgi/trace");
-                                downloader.download();
-                                cloudflareTrace = FileUtils.readFileToString(downloader.outputFile,
-                                        Charset.defaultCharset());
-                                Utils.debugLog(TAG, "cloudflareTrace: " + cloudflareTrace);
-                                properties.load(new FileReader(downloader.outputFile));
-                            } catch (IOException | InterruptedException e) {
-                                e.printStackTrace();
-                                cloudflareTrace = "ERROR: " + e.getLocalizedMessage();
-                            }
-                            if (cloudflareTrace != null) {
-                                final String text = properties.getProperty("h") + "/" +
-                                        properties.getProperty("ip") + "\nserved by " +
-                                        properties.getProperty("colo") + "/" +
-                                        properties.getProperty("fl") + "\n" +
-                                        properties.getProperty("tls") + " " +
-                                        properties.getProperty("sni") + " SNI\n" +
-                                        ("encrypted".equals(properties.getProperty("sni"))
-                                                ? "\uD83C\uDF89" : "\uD83D\uDE31");
-                                aboutActivity.runOnUiThread(() -> cloudflareTraceTextView.setText(text));
-                                final String t = cloudflareTrace;
-                                cloudflareTraceTextView.setOnClickListener(v -> {
-                                    Toast.makeText(getContext(), t, Toast.LENGTH_LONG).show();
-                                });
-                            }
-                        }
-                    }.start();
-
-                    new MaterialAlertDialogBuilder(context)
-                            .setView(view)
-                            .setPositiveButton(R.string.ok, null)
-                            .show();
-                    return true;
-                }
-            };
 
     /**
      * Initializes SystemInstaller preference, which can only be enabled when F-Droid is installed as a system-app

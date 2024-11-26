@@ -308,36 +308,36 @@ public class FDroidApp extends Application implements androidx.work.Configuratio
                                                  "%s %s: Crash Report",
                                                  BuildConfig.APPLICATION_ID,
                                                  BuildConfig.VERSION_NAME);
-            ACRA.init(this, new CoreConfigurationBuilder()
-                    .withReportContent(
-                            ReportField.USER_COMMENT,
-                            ReportField.PACKAGE_NAME,
-                            ReportField.APP_VERSION_NAME,
-                            ReportField.ANDROID_VERSION,
-                            ReportField.PRODUCT,
-                            ReportField.BRAND,
-                            ReportField.PHONE_MODEL,
-                            ReportField.DISPLAY,
-                            ReportField.TOTAL_MEM_SIZE,
-                            ReportField.AVAILABLE_MEM_SIZE,
-                            ReportField.CUSTOM_DATA,
-                            ReportField.STACK_TRACE_HASH,
-                            ReportField.STACK_TRACE
-                    )
-                    .withPluginConfigurations(
-                            new MailSenderConfigurationBuilder()
-                                    .withMailTo(BuildConfig.ACRA_REPORT_EMAIL)
-                                    .withReportFileName(BuildConfig.ACRA_REPORT_FILE_NAME)
-                                    .withSubject(subject)
-                                    .build(),
-                            new DialogConfigurationBuilder()
-                                    .withResTheme(R.style.Theme_App)
-                                    .withTitle(getString(R.string.crash_dialog_title))
-                                    .withText(getString(R.string.crash_dialog_text))
-                                    .withCommentPrompt(getString(R.string.crash_dialog_comment_prompt))
-                                    .build()
-                    )
-            );
+//            ACRA.init(this, new CoreConfigurationBuilder()
+//                    .withReportContent(
+//                            ReportField.USER_COMMENT,
+//                            ReportField.PACKAGE_NAME,
+//                            ReportField.APP_VERSION_NAME,
+//                            ReportField.ANDROID_VERSION,
+//                            ReportField.PRODUCT,
+//                            ReportField.BRAND,
+//                            ReportField.PHONE_MODEL,
+//                            ReportField.DISPLAY,
+//                            ReportField.TOTAL_MEM_SIZE,
+//                            ReportField.AVAILABLE_MEM_SIZE,
+//                            ReportField.CUSTOM_DATA,
+//                            ReportField.STACK_TRACE_HASH,
+//                            ReportField.STACK_TRACE
+//                    )
+//                    .withPluginConfigurations(
+//                            new MailSenderConfigurationBuilder()
+//                                    .withMailTo(BuildConfig.ACRA_REPORT_EMAIL)
+//                                    .withReportFileName(BuildConfig.ACRA_REPORT_FILE_NAME)
+//                                    .withSubject(subject)
+//                                    .build(),
+//                            new DialogConfigurationBuilder()
+//                                    .withResTheme(R.style.Theme_App)
+//                                    .withTitle(getString(R.string.crash_dialog_title))
+//                                    .withText(getString(R.string.crash_dialog_text))
+//                                    .withCommentPrompt(getString(R.string.crash_dialog_comment_prompt))
+//                                    .build()
+//                    )
+//            );
             if (isAcraProcess() || HidingManager.isHidden(this)) {
                 return;
             }
@@ -350,6 +350,8 @@ public class FDroidApp extends Application implements androidx.work.Configuratio
         applyTheme();
 
         configureProxy(preferences);
+
+        ConscryptLoader.installConscrypt();
 
         preferences.registerUnstableUpdatesChangeListener(() ->
                 AppUpdateStatusManager.getInstance(FDroidApp.this).checkForUpdates());
@@ -385,9 +387,6 @@ public class FDroidApp extends Application implements androidx.work.Configuratio
             modeFlags |= Intent.FLAG_GRANT_PERSISTABLE_URI_PERMISSION;
             grantUriPermission(packageName, InstallHistoryService.LOG_URI, modeFlags);
         }
-
-        // find and process provisions if any.
-        Provisioner.scanAndProcess(getApplicationContext());
 
         // if the underlying OS version has changed, then fully rebuild the database
         SharedPreferences atStartTime = getAtStartTimeSharedPreferences();

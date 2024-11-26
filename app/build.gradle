@@ -53,8 +53,10 @@ android {
     }
 
     ext {
-        APP_NAME = "@string/app_name"
-        APP_NAME_DEBUG = "@string/app_name_debug"
+//        APP_NAME = "@string/app_name"
+//        APP_NAME_DEBUG = "@string/app_name_debug"
+        APP_NAME = "ECH Apps"
+        APP_NAME_DEBUG = "ECH Apps Debug"
     }
 
     buildTypes {
@@ -85,6 +87,7 @@ android {
     productFlavors {
         defo {
             dimension "defo"
+            applicationId "ie.defo.ech_apps"
         }
         full {
             getIsDefault().set(true)
@@ -246,15 +249,15 @@ dependencies {
 }
 
 android.packagingOptions.doNotStrip '**/*.so'
-
-// org.fdroid.fdroid.updater.UpdateServiceTest needs app-full-debug.apk
-android.productFlavors.all { flavor ->
-    if (flavor.name == "full") {
-        project.afterEvaluate { project ->
-            def dep = tasks.getByName("assembleFullDebug")
-            project.tasks.withType(Test) { task ->
-                task.dependsOn dep
-            }
-        }
-    }
-}
+//
+//// org.fdroid.fdroid.updater.UpdateServiceTest needs app-full-debug.apk
+//android.productFlavors.all { flavor ->
+//    if (flavor.name == "full") {
+//        project.afterEvaluate { project ->
+//            def dep = tasks.getByName("assembleFullDebug")
+//            project.tasks.withType(Test) { task ->
+//                task.dependsOn dep
+//            }
+//        }
+//    }
+//}

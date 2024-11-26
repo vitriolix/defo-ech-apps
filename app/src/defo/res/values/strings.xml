@@ -3,6 +3,7 @@
 
     <string name="app_name">ECH Apps</string>
     <string name="app_name_debug" translatable="false">ECH Apps Debug</string>
-    <string name="about_title">About ECH Apps</string>
+    <string name="about_title_full">About ECH Apps</string>
+
 
 </resources>
